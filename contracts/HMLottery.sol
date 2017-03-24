@@ -37,26 +37,25 @@ contract HMLottery is Ownable, SafeMath, Contactable, Killable {
     }
 
     bet[] public bets;                     // history of all bets done
-    uint public nextRollIndex;           // the index for the first bet for the next roll
-
     ratio[] public ratios;                 // history of all set ratios
 
     bytes32[] public hashedSeeds;           // list of hashes to prove that the seeds are pre-generated
     uint public nextHashedSeedIndex;     // index of the next hash to use to verify the seed for RND
 
     roll[] public rolls;                   // history of all rolls
+    uint public nextRollIndex;           // the index for the first bet for the next roll
     uint public nextPayoutIndex;         // index of the next payout (for winners)
 
-    uint public minBet;                    // the minimum bet allowed
+    uint public minimumBet;                    // the minimum bet allowed
     address public tokenAddress;           // address of the token being used for this lottery
     
     
     function HMLottery() {
         owner = msg.sender;         // set the owner of this contract to the creator of the contract
-        minBet = 100;               // set the mimimum bet
+        minimumBet = 100;               // set the minimum bet
         ratio memory nextRatio;
 
-        // at these payout ratios the game pays out 50% tokens taken in (based on probibility)
+        // at these payout ratios the game pays out 50% tokens taken in (based on probability)
         nextRatio.numberRatios[0] = 3200;
         nextRatio.numberRatios[1] = 819200;
         nextRatio.numberRatios[2] = 209715200;
@@ -86,8 +85,8 @@ contract HMLottery is Ownable, SafeMath, Contactable, Killable {
         ratios.push(nextRatio);
     }
 
-    function setMinBet(uint _minBet) external onlyOwner {
-        minBet = _minBet;
+    function setMinBet(uint _minimumBet) external onlyOwner {
+        minimumBet = _minimumBet;
     }
 
     function changeToken(address _token) external onlyOwner returns (bool) {     
@@ -153,6 +152,7 @@ contract HMLottery is Ownable, SafeMath, Contactable, Killable {
             }
             if (correctNumbers > 0) {
                 bets[b].winAmount = bets[b].tokensPlaced * ratios[bets[b].ratioIndex].numberRatios[correctNumbers - 1];
+                PlayerWon(bets[b].player, bets[b].winAmount);
                 totalWinnings += bets[b].winAmount;
             }
             else bets[b].winAmount = 0;
@@ -164,6 +164,8 @@ contract HMLottery is Ownable, SafeMath, Contactable, Killable {
 
         // move the nextRollIndex to end of the bets list
         nextRollIndex = bets.length;
+
+        RollCompleted(numbers[0], numbers[1], numbers[2], numbers[3]);
     }
 
     function payOut() external onlyOwner returns (bool) {
@@ -213,7 +215,7 @@ contract HMLottery is Ownable, SafeMath, Contactable, Killable {
     }
 
 
-    event PlayerWon(uint _value);
+    event PlayerWon(address player, uint _value);
 
     event RollCompleted(uint8 _numOne, uint8 _numTwo, uint8 _numThree, uint8 _numFour);
 }
