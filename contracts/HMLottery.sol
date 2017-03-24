@@ -90,25 +90,28 @@ contract HMLottery is Ownable, SafeMath, Contactable, Killable {
         minBet = _minBet;
     }
 
-    function changeToken(address _token) external onlyOwner returns (bool) {
-        // return all existing bets (because they will be in another token)
-        // we need to check if there is enough tokens in reserve to pay these players back
-        ERC20 token = ERC20(tokenAddress);
-        uint allBets = 0;
-        for (var i = nextRollIndex; i < bets.length; i++) {
-            allBets += bets[i].tokensPlaced;    
+    function changeToken(address _token) external onlyOwner returns (bool) {     
+        if (tokenAddress != 0) {
+            // return all existing bets (because they will be in another token)
+            ERC20 token = ERC20(tokenAddress);
+            // calculate all current bets total
+            uint allBets = 0;
+            for (var i = nextRollIndex; i < bets.length; i++) {
+                allBets += bets[i].tokensPlaced;    
+            }
+            // check if there is enough tokens in reserve to pay these players back
+            if (token.balanceOf(this) < allBets) return false;
+            // refund each player
+            for (var j = nextRollIndex; j < bets.length; j++) {
+                token.transfer(bets[j].player, bets[j].tokensPlaced); 
+            }
+            // remove those bets from the list
+            bets.length = nextRollIndex;
         }
-        if (token.balanceOf(this) < allBets) return false;
-        // refund each player
-        for (var j = nextRollIndex; j < bets.length; j++) {
-            token.transfer(bets[j].player, bets[j].tokensPlaced); 
-        }
-        // remove those bets from the list
-        bets.length = nextRollIndex;
-        nextRollIndex--;
     
         // change the token
-        token = ERC20(_token);
+        tokenAddress = _token;
+        return true;
     }
 
     function addHashedSeed(bytes32 _hash) external onlyOwner {
