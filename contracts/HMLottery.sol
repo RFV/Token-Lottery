@@ -9,7 +9,7 @@ import './ExampleToken.sol';
 
 /// @title Hadi Morrow's Lottery
 /// @author Riaan F Venter~ RFVenter~ msg@rfv.io
-contract HMLottery is Ownable, SafeMath, Contactable, Killable {
+contract HMLottery is Ownable, SafeMath, Killable {
 
     // represents one bet made by a player
     struct bet {
@@ -47,12 +47,14 @@ contract HMLottery is Ownable, SafeMath, Contactable, Killable {
     uint public nextPayoutIndex;         // index of the next payout (for winners)
 
     uint public minimumBet;                    // the minimum bet allowed
+    uint public maximumBet;                    // the maximum bet allowed
     address public tokenAddress;           // address of the token being used for this lottery
     
     
     function HMLottery() {
         owner = msg.sender;         // set the owner of this contract to the creator of the contract
         minimumBet = 100;               // set the minimum bet
+        maximumBet = 500;
         ratio memory nextRatio;
 
         // at these payout ratios the game pays out 50% tokens taken in (based on probability)
@@ -68,16 +70,14 @@ contract HMLottery is Ownable, SafeMath, Contactable, Killable {
         nextRollIndex = 0;          // initialize the list index
         nextPayoutIndex = 0;        // initialize the list index
 
-        // put one hash in for the next draw ("test")
-        hashedSeeds.push(sha3('test'));
+        // put one hash in for the next draw
+        hashedSeeds.push(0x72e474042cda031650034d87b8fa155d65eccc294ac18e891bcf1c6b2d0cd031);
         nextHashedSeedIndex = 0;    // initialize the list index
-
-        setContactInformation('Contact INFO'); // more info about this lottery
     }
 
     // sets the ratios that will be used to multiply winnings based on correct numbers
     // !!! (based on 2 decimal precision [to select a multiple of 23.5 specify 2350])
-    function setPayOutRatios(uint _oneNum, uint _twoNums, uint _threeNums, uint _fourNums) external onlyOwner {
+    function setPayoutRatios(uint _oneNum, uint _twoNums, uint _threeNums, uint _fourNums) external onlyOwner {
         ratio memory nextRatio;
 
         nextRatio.numberRatios = [_oneNum, _twoNums, _threeNums, _fourNums];
@@ -85,27 +85,32 @@ contract HMLottery is Ownable, SafeMath, Contactable, Killable {
         ratios.push(nextRatio);
     }
 
-    function setMinBet(uint _minimumBet) external onlyOwner {
+    function setMinimumBet(uint _minimumBet) external onlyOwner {
         minimumBet = _minimumBet;
     }
 
-    function changeToken(address _token) external onlyOwner returns (bool) {     
+    function setMaximumBet(uint _maximumBet) external onlyOwner {
+        maximumBet = _maximumBet;
+    }
+
+    function setToken(address _token) external onlyOwner returns (bool) {     
         if (tokenAddress != 0) {
             // return all existing bets (because they will be in another token)
-            ERC20 token = ERC20(tokenAddress);
+            //ERC20 token = ERC20(tokenAddress);
             // calculate all current bets total
-            uint allBets = 0;
-            for (var i = nextRollIndex; i < bets.length; i++) {
-                allBets += bets[i].tokensPlaced;    
-            }
+            //uint allBets = 0;
+            //for (var i = nextRollIndex; i < bets.length; i++) {
+            //    allBets += bets[i].tokensPlaced;    
+            //}
             // check if there is enough tokens in reserve to pay these players back
-            if (token.balanceOf(this) < allBets) return false;
+            //if (token.balanceOf(this) < allBets) return false;
             // refund each player
-            for (var j = nextRollIndex; j < bets.length; j++) {
-                token.transfer(bets[j].player, bets[j].tokensPlaced); 
-            }
+            //for (var j = nextRollIndex; j < bets.length; j++) {
+            //    token.transfer(bets[j].player, bets[j].tokensPlaced); 
+            //}
             // remove those bets from the list
-            bets.length = nextRollIndex;
+            //bets.length = nextRollIndex;
+            return false;
         }
     
         // change the token
@@ -188,17 +193,19 @@ contract HMLottery is Ownable, SafeMath, Contactable, Killable {
 
     //// PUBLIC interface
 
-    function placeBet(uint8 _numOne, uint8 _numTwo, uint8 _numThree, uint8 _numFour, uint _value) external returns (int) {
+    function placeBet(uint8 _numOne, uint8 _numTwo, uint8 _numThree, uint8 _numFour, uint _value) external {
 
-        ERC20 token = ERC20(tokenAddress);
+        // check that the bet is within the min and max bet limits
+        if ((_value < minimumBet) || (_value > maximumBet)) return;
 
         // make sure that make sure that all numbers are different from each other!
         if (_numOne == _numTwo || _numOne == _numThree || _numOne == _numFour ||
             _numTwo == _numThree || _numTwo == _numFour ||
-            _numThree == _numFour) return -1;
+            _numThree == _numFour) return;
 
+        ERC20 token = ERC20(tokenAddress);
         // transfer the required tokens to this contract
-        if (!token.transferFrom(msg.sender, this, _value)) return -1;
+        if (!token.transferFrom(msg.sender, this, _value)) return;
 
         // tokens transfered so can now create a new bet
         bet memory newBet;
@@ -211,10 +218,12 @@ contract HMLottery is Ownable, SafeMath, Contactable, Killable {
         // place it into the bets list
         bets.push(newBet);
 
-        return int(bets.length);
+        BetPlaced(msg.sender, _numOne, _numTwo, _numThree, _numFour, _value);
     }
 
 
+    event BetPlaced(address player, uint8 _numOne, uint8 _numTwo, uint8 _numThree, uint8 _numFour, uint _value);
+    
     event PlayerWon(address player, uint _value);
 
     event RollCompleted(uint8 _numOne, uint8 _numTwo, uint8 _numThree, uint8 _numFour);
