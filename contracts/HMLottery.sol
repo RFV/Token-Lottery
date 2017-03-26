@@ -11,6 +11,15 @@ import './ExampleToken.sol';
 /// @author Riaan F Venter~ RFVenter~ <msg@rfv.io>
 contract HMLottery is Ownable, SafeMath, Killable {
 
+    event BetPlaced(address _player, uint8 _numOne, uint8 _numTwo, uint8 _numThree, uint8 _numFour, uint _value);
+    event RollCompleted(uint8 _numOne,
+                        uint8 _numTwo, 
+                        uint8 _numThree, 
+                        uint8 _numFour, 
+                        uint _totalWinnings);
+    event PlayerWon(address _player, uint _value);
+    event PayoutDone(uint _totalWinnings);
+
     // represents one bet made by a player
     struct bet {
         address player;             // the player that makes a bet
@@ -50,13 +59,14 @@ contract HMLottery is Ownable, SafeMath, Killable {
     uint public maximumBet;         // the maximum bet allowed
     address public tokenAddress;    // address of the token being used for this lottery
 
-    string public codeAuthor = "Riaan Francois Venter <msg@rfv.io>";
-    
+    string public codeAuthor = "Riaan Francois Venter <msg@rfv.io>"; // me
+
+    /// @notice the init function that is run automatically when contract is created
     function HMLottery() {
         owner = msg.sender;         // set the owner of this contract to the creator of the contract
         minimumBet = 100;           // set the minimum bet
-        maximumBet = 500;
-        ratio memory nextRatio;
+        maximumBet = 500;           // set the maximum bet
+        ratio memory nextRatio;     // create ratios for specific payouts based on how many balls won
 
         // at these payout ratios the game pays out 50% tokens taken in (based on probability)
         nextRatio.numberRatios[0] = 3200;
@@ -72,11 +82,15 @@ contract HMLottery is Ownable, SafeMath, Killable {
         // put one hash in for the next draw
         hashedSeeds.push(0xd126d9ba76874eeae0e9706d1303194952377059e8d72424b4da996c0d4e0c7f);
 
-        payoutPending = false;
+        payoutPending = false;      // gate for controlling if some functions may run or not
     }
 
-    // sets the ratios that will be used to multiply winnings based on correct numbers
-    // !!! (based on 2 decimal precision [to select a multiple of 23.5 specify 2350])
+    /// @notice sets the ratios that will be used to multiply winnings based on correct numbers
+    /// @notice !!!(based on 2 decimal precision [to select a multiple of 23.5 specify 2350])
+    /// @param _oneNum The number to multiply with in case the player has one lucky number (div 100)
+    /// @param _twoNums The number to multiply with in case the player has two lucky numbers (div 100)
+    /// @param _threeNums The number to multiply with in case the player has three lucky numbers (div 100)
+    /// @param _fourNums The number to multiply with in case the player has four lucky numbers (div 100)
     function setPayoutRatios(uint _oneNum, uint _twoNums, uint _threeNums, uint _fourNums) external onlyOwner {
         ratio memory nextRatio;
 
@@ -85,14 +99,19 @@ contract HMLottery is Ownable, SafeMath, Killable {
         ratios.push(nextRatio);
     }
 
+    /// @notice sets the minimum bet allowed
     function setMinimumBet(uint _minimumBet) external onlyOwner {
         minimumBet = _minimumBet;
     }
 
+    /// @notice sets the maximum bet allowed
     function setMaximumBet(uint _maximumBet) external onlyOwner {
         maximumBet = _maximumBet;
     }
 
+    /// @notice sets the token that is to be used for this Lottery
+    /// @param _token The address of the ERC20 token
+    /// @return whether the transfer was successful or not
     function setToken(address _token) external onlyOwner returns (bool) {     
         if (tokenAddress != 0) {
             // return all existing bets (because they will be in another token)
@@ -118,6 +137,10 @@ contract HMLottery is Ownable, SafeMath, Killable {
         return true;
     }
 
+    /// @notice Starts a random number generator based on the valid seed. When calling this function the next seed's hash must also be specified. This is to ensure that seed is predetermined which means its impossible for the owner of the contract to cheat. Each existing bet is checked to see if it has won and if so how much. RollCompleted event is fired with the lucky numbers and the total winning for this roll.
+    /// @param _seed The string that is to be used as the seed for the random generator
+    /// @param _nextHashedSeed The hash of the next roll's seed
+    /// @return whether the transfer was successful or not
     function rollNumbers(string _seed, bytes32 _nextHashedSeed) external onlyOwner returns (bool) {
         // check if the last payout was done
         if (payoutPending) return false;
@@ -173,6 +196,8 @@ contract HMLottery is Ownable, SafeMath, Killable {
         return true;
     }
 
+    /// @notice Pays each lucky bet and sets the game ready for the next roll. There must be enough tokens allocated to this contract so that it has sufficient funds to pay out the winners. PayoutDone event is fired containing the total payout
+    /// @return whether the transfer was successful or not
     function payOut() external onlyOwner returns (bool) {
         ERC20 token = ERC20(tokenAddress);
 
@@ -199,6 +224,13 @@ contract HMLottery is Ownable, SafeMath, Killable {
 
     //// PUBLIC interface
 
+    /// @notice this is to place a new bet. Before a bet can be places the user must ensure that they have called the approve function on the token. This will enable this lottery contract to deduct (transfer) the specified tokens for the next bet.
+    /// @param _numOne 1st number for the bet
+    /// @param _numTwo 2nd number for the bet
+    /// @param _numThree 3rd number for the bet
+    /// @param _numFour 4th number for the bet
+    /// @param _value the number of tokens to place for this bet
+    /// @return whether the transfer was successful or not
     function placeBet(uint8 _numOne, uint8 _numTwo, uint8 _numThree, uint8 _numFour, uint _value) external returns (bool) {
 
         // check that the bet is within the min and max bet limits
@@ -229,7 +261,7 @@ contract HMLottery is Ownable, SafeMath, Killable {
         return true;
     }
 
-    // test functions, there are used for the unit testing and are not meant for production
+    /////// test functions, there are used for the unit testing and are not meant for production
     function testBetsLength() constant returns (uint) {
         return bets.length;
     }
@@ -295,15 +327,4 @@ contract HMLottery is Ownable, SafeMath, Killable {
     }
     /////////////////
 
-    event BetPlaced(address _player, uint8 _numOne, uint8 _numTwo, uint8 _numThree, uint8 _numFour, uint _value);
-    
-    event RollCompleted(uint8 _numOne,
-                        uint8 _numTwo, 
-                        uint8 _numThree, 
-                        uint8 _numFour, 
-                        uint _totalWinnings);
-
-    event PlayerWon(address _player, uint _value);
-
-    event PayoutDone(uint _totalWinnings);
 }
