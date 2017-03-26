@@ -19,7 +19,7 @@ contract HMLottery is Ownable, SafeMath, Killable {
         uint ratioIndex;            // the index of the payout ratios list item, relevant for this bet
         uint timestamp;             // timestamp that this bet was made
         uint rollIndex;             // the index of the roll that this bet is for
-        uint winAmount;             // initialized to -1, in the event of a win this will be the amount
+        uint winAmount;             // in the event of a win this will be the amount
     }
 
     // the set ratios in case of winning 1, 2, 3 or 4 correct numbers
@@ -31,7 +31,7 @@ contract HMLottery is Ownable, SafeMath, Killable {
     // represents a roll
     struct roll {
         uint8[4] numbers;           // the winning numbers generated based on the random seed
-        string seed;                // the seed that was used
+        bytes32 seed;                // the seed that was used
         uint totalWinnings;         // the grand total of all winners for this roll
         uint timestamp;             // timestamp that this roll was generated
     }
@@ -70,7 +70,7 @@ contract HMLottery is Ownable, SafeMath, Killable {
         nextPayoutIndex = 0;        // initialize the list index
 
         // put one hash in for the next draw
-        hashedSeeds.push(0x72e474042cda031650034d87b8fa155d65eccc294ac18e891bcf1c6b2d0cd031);
+        hashedSeeds.push(0x3864c58f7d209779faecf99a6441c6687ccbd5c98639a4f17753434199b095b3);
         nextHashedSeedIndex = 0;    // initialize the list index
     }
 
@@ -118,7 +118,7 @@ contract HMLottery is Ownable, SafeMath, Killable {
     }
 
 
-    function rollNumbers(string _seed, string _nextHashedSeed) external onlyOwner returns (bool) {
+    function rollNumbers(bytes32 _seed, bytes32 _nextHashedSeed) external onlyOwner returns (bool) {
         // check if the last payout was done
         if (nextRollIndex != nextPayoutIndex) return false;
 
@@ -133,7 +133,7 @@ contract HMLottery is Ownable, SafeMath, Killable {
         while (i < 4) {
             numbers[i] = uint8(combinedRand);      // same as '= combinedRand % 256;'
             combinedRand >>= 8;                    // same as combinedRand /= 256;
-            for (uint8 j = 0; j <= i; j++) {       // is newly picked val in a set?
+            for (uint8 j = 0; j < i; j++) {       // is newly picked val in a set?
                 if (numbers[j] == numbers[i]) {    // if true then break to while loop and look for another Num[i]
                     i--;
                     break;

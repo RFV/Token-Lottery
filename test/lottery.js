@@ -24,22 +24,8 @@ contract('HMLottery', accounts => {
       assert.equal(lotteryMin, 100, "Minimum bet should be 100");
       assert.equal(lotteryMax, 500, "Maximum bet should be 500");
       assert.equal(lotteryHashedSeed,
-                   "0x72e474042cda031650034d87b8fa155d65eccc294ac18e891bcf1c6b2d0cd031", 
+                   "0x3864c58f7d209779faecf99a6441c6687ccbd5c98639a4f17753434199b095b3", 
                    "Should be the same");
-    });
-  });
-  it("addHashedSeed should add one hashedSeed", () => {
-    var lottery;
-    var hseed = "0x8007c208f61536826cf97364c40e6cb92da089cb05d17dffc525ada193f9dac6"
-
-    return HMLottery.deployed().then(instance => {
-      lottery = instance;
-
-      return lottery.addHashedSeed(hseed);
-    }).then(() => {
-      return lottery.hashedSeeds.call(1);
-    }).then(hseed2 => {
-      assert.equal(hseed2.toString(), hseed, "This should be a hashedSeed");
     });
   });
   it("none of these bets should go through", () => {
@@ -131,6 +117,18 @@ contract('HMLottery', accounts => {
       console.log("hello");
     });
   });
+  //it("rollNumbers twice and print out the combinations to console of 1st roll", () => {
+  //  var lottery;
+
+  //  return HMLottery.deployed().then(instance => {
+  //    lottery = instance;
+      
+   //   return rollNumbers(0xffbb099e3fe006320be2598862d6729d89a08cac02b11c45b33901ab9fbb5fc3,
+   //                      0xc65898477ca7d1ae27446f371c1f8de27ce25193268e20c9a46032489614f59b)
+   // });//.then(instance => {
+
+    //});
+  //});
 });
 
 
