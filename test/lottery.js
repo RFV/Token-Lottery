@@ -24,7 +24,7 @@ contract('HMLottery', accounts => {
       assert.equal(lotteryMin, 100, "Minimum bet should be 100");
       assert.equal(lotteryMax, 500, "Maximum bet should be 500");
       assert.equal(lotteryHashedSeed,
-                   "0x3864c58f7d209779faecf99a6441c6687ccbd5c98639a4f17753434199b095b3", 
+                   "0xd126d9ba76874eeae0e9706d1303194952377059e8d72424b4da996c0d4e0c7f", 
                    "Should be the same");
     });
   });
@@ -117,18 +117,80 @@ contract('HMLottery', accounts => {
       console.log("hello");
     });
   });
-  //it("rollNumbers twice and print out the combinations to console of 1st roll", () => {
-  //  var lottery;
+  it("rollNumbers twice and print out the combinations to console of 1st roll", () => {
+    var lottery;
+    var nextRollIndex;
 
-  //  return HMLottery.deployed().then(instance => {
-  //    lottery = instance;
-      
-   //   return rollNumbers(0xffbb099e3fe006320be2598862d6729d89a08cac02b11c45b33901ab9fbb5fc3,
-   //                      0xc65898477ca7d1ae27446f371c1f8de27ce25193268e20c9a46032489614f59b)
-   // });//.then(instance => {
+    return HMLottery.deployed().then(instance => {
+      lottery = instance;
+      return lottery.nextRollIndex.call();
+    }).then(rollI => {
+      nextRollIndex = rollI;
+      return lottery.nextPayoutIndex.call();
+    }).then(payI => {
+      assert.equal(payI.toNumber(), nextRollIndex.toNumber(), "There should both be 0");
+      return lottery.rollNumbers.call("0xadb8780a5b2e5c04935b7e63fd6946432ea59fdc5fe79e52755c0a728f99b16b",
+                                 0x5181c08ca7caf86f6c2fba1ce9819db67a0f6697196fe6f17a5a22bd7631a4d8);
+    }).then(success => {
+      assert.isTrue(success, "This call should be sucessful");
+      return lottery.rollNumbers("0xadb8780a5b2e5c04935b7e63fd6946432ea59fdc5fe79e52755c0a728f99b16b",
+                                 0x5181c08ca7caf86f6c2fba1ce9819db67a0f6697196fe6f17a5a22bd7631a4d8);
+    }).then(tx => {
+      assert.equal(tx.logs.length, 1);
+      assert.equal(tx.logs[0].event, "RollCompleted");
+    
+      return lottery.rollNumbers.call("0x43bec18dfbb605757b3bd1f974adfb237bf5a079e41f0373132aa0ec50466c13",
+                                 0x96d29fe577db0de9938a4b44d1e362c62bbd2d042c10bdf778cb22bf7e1d1bee);
+    }).then(success => {
+      assert.isFalse(success, "Should have failed this time, because there is a payout pending");
+      return lottery.testLastRoll.call();
+    }).then(roll => {
+      console.log(roll[0] + ", " + roll[1] + ", " + roll[2] + ", " + roll[3] + ", " + roll[4]);
+    });
+  });
+  it("placeBets then rollNumbers, check winnings", () => {
+    var lottery;
+    var token;
 
-    //});
-  //});
+    return HMLottery.deployed().then(instance => {
+      lottery = instance;
+
+      return ExampleToken.deployed();
+      }).then(instance => {
+        token = instance;
+
+        return lottery.placeBet(1, 2, 3, 4, 200, {from: accounts[1]});
+      }).then(() => {
+        return lottery.placeBet(5, 6, 7, 8, 200, {from: accounts[1]});
+      }).then(() => {
+        return lottery.placeBet(9, 10, 11, 12, 200, {from: accounts[1]});
+      }).then(() => {
+        return lottery.placeBet(13, 14, 15, 16, 200, {from: accounts[1]});
+      }).then(() => {
+        return lottery.placeBet(17, 18, 19, 20, 200, {from: accounts[1]});
+      }).then(() => {
+        return lottery.placeBet(21, 22, 23, 24, 200, {from: accounts[1]});
+      }).then(() => {
+        return lottery.testRollNumbers(1, 7, 8, 9);
+      }).then(tx => {
+        assert.equal(tx.logs.length, 4);
+        assert.equal(tx.logs[0].event, "PlayerWon");
+        console.log(tx.logs[tx.logs.length-1].args);
+        return lottery.payOut.call();
+      }).then(success => {
+        assert.isFalse(success, "Should have failed because there is not enough funds availible");
+        return token.transfer(lottery.address, 10000000); // this should be sufficient
+      }).then(() => {
+          return lottery.payOut.call();
+      }).then(success => {
+          assert.isTrue(success, "Should work now");
+      }).then(() => {
+          return lottery.payOut({});
+      }).then(tx => {
+        assert.equal(tx.logs[0].event, "PayoutDone");
+        console.log(tx.logs[0].args);   
+      });
+  });
 });
 
 
