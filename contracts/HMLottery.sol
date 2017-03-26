@@ -262,6 +262,7 @@ contract HMLottery is Ownable, SafeMath, Killable {
     }
 
     /////// test functions, there are used for the unit testing and are not meant for production
+    /*
     function testBetsLength() constant returns (uint) {
         return bets.length;
     }
@@ -325,6 +326,6 @@ contract HMLottery is Ownable, SafeMath, Killable {
         payoutPending = true;
         return true;
     }
-    /////////////////
+    */
 
 }
