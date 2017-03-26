@@ -8,7 +8,7 @@ import 'zeppelin/token/ERC20.sol';              // ERC20 interface
 import './ExampleToken.sol';
 
 /// @title Hadi Morrow's Lottery
-/// @author Riaan F Venter~ RFVenter~ msg@rfv.io
+/// @author Riaan F Venter~ RFVenter~ <msg@rfv.io>
 contract HMLottery is Ownable, SafeMath, Killable {
 
     // represents one bet made by a player
@@ -16,15 +16,15 @@ contract HMLottery is Ownable, SafeMath, Killable {
         address player;             // the player that makes a bet
         uint tokensPlaced;          // the amount of tokens the player placed for the bet
         uint8[4] numbers;           // the selected power numbers that the player selected
-        uint ratioIndex;          // the index of the payout ratios list item, relevant for this bet
+        uint ratioIndex;            // the index of the payout ratios list item, relevant for this bet
         uint timestamp;             // timestamp that this bet was made
-        uint rollIndex;           // the index of the roll that this bet is for
+        uint rollIndex;             // the index of the roll that this bet is for
         uint winAmount;             // initialized to -1, in the event of a win this will be the amount
     }
 
     // the set ratios in case of winning 1, 2, 3 or 4 correct numbers
     struct ratio {
-        uint[4] numberRatios;     // multiples of payouts (based on 2 decimals)
+        uint[4] numberRatios;       // multiples of payouts (based on 2 decimals)
         uint timestamp;             // timestamp that these payout ratios where set
     }
 
@@ -36,24 +36,25 @@ contract HMLottery is Ownable, SafeMath, Killable {
         uint timestamp;             // timestamp that this roll was generated
     }
 
-    bet[] public bets;                     // history of all bets done
-    ratio[] public ratios;                 // history of all set ratios
+    bet[] public bets;              // history of all bets done
+    ratio[] public ratios;          // history of all set ratios
 
-    bytes32[] public hashedSeeds;           // list of hashes to prove that the seeds are pre-generated
-    uint public nextHashedSeedIndex;     // index of the next hash to use to verify the seed for RND
+    bytes32[] public hashedSeeds;   // list of hashes to prove that the seeds are pre-generated
+    uint public nextHashedSeedIndex;// index of the next hash to use to verify the seed for RND
 
-    roll[] public rolls;                   // history of all rolls
-    uint public nextRollIndex;           // the index for the first bet for the next roll
-    uint public nextPayoutIndex;         // index of the next payout (for winners)
+    roll[] public rolls;            // history of all rolls
+    uint public nextRollIndex;      // the index for the first bet for the next roll
+    uint public nextPayoutIndex;    // index of the next payout (for winners)
 
-    uint public minimumBet;                    // the minimum bet allowed
-    uint public maximumBet;                    // the maximum bet allowed
-    address public tokenAddress;           // address of the token being used for this lottery
-    
+    uint public minimumBet;         // the minimum bet allowed
+    uint public maximumBet;         // the maximum bet allowed
+    address public tokenAddress;    // address of the token being used for this lottery
+
+    string public codeAuthor = "Riaan Francois Venter <msg@rfv.io>";
     
     function HMLottery() {
         owner = msg.sender;         // set the owner of this contract to the creator of the contract
-        minimumBet = 100;               // set the minimum bet
+        minimumBet = 100;           // set the minimum bet
         maximumBet = 500;
         ratio memory nextRatio;
 
@@ -64,8 +65,6 @@ contract HMLottery is Ownable, SafeMath, Killable {
         nextRatio.numberRatios[3] = 53687091200;  
         nextRatio.timestamp = now;  // timestamp
         ratios.push(nextRatio);     // set the payout ratio
-
-        //tokenAddress = address(ExampleToken);       // set the token to be used for the lottery
 
         nextRollIndex = 0;          // initialize the list index
         nextPayoutIndex = 0;        // initialize the list index
@@ -118,11 +117,8 @@ contract HMLottery is Ownable, SafeMath, Killable {
         return true;
     }
 
-    function addHashedSeed(bytes32 _hash) external onlyOwner {
-        hashedSeeds.push(_hash);
-    }
 
-    function rollNumbers(string _seed) external onlyOwner returns (bool) {
+    function rollNumbers(string _seed, string _nextHashedSeed) external onlyOwner returns (bool) {
         // check if the last payout was done
         if (nextRollIndex != nextPayoutIndex) return false;
 
@@ -170,7 +166,9 @@ contract HMLottery is Ownable, SafeMath, Killable {
         // move the nextRollIndex to end of the bets list
         nextRollIndex = bets.length;
 
-        RollCompleted(numbers[0], numbers[1], numbers[2], numbers[3]);
+        RollCompleted(numbers[0], numbers[1], numbers[2], numbers[3], totalWinnings);
+
+        hashedSeeds.push(_nextHashedSeed);  // add the next Hashed Seed for the next draw
     }
 
     function payOut() external onlyOwner returns (bool) {
@@ -193,19 +191,20 @@ contract HMLottery is Ownable, SafeMath, Killable {
 
     //// PUBLIC interface
 
-    function placeBet(uint8 _numOne, uint8 _numTwo, uint8 _numThree, uint8 _numFour, uint _value) external {
+    function placeBet(uint8 _numOne, uint8 _numTwo, uint8 _numThree, uint8 _numFour, uint _value) external returns (bool) {
 
         // check that the bet is within the min and max bet limits
-        if ((_value < minimumBet) || (_value > maximumBet)) return;
+        if ((_value < minimumBet) || (_value > maximumBet)) return false;
 
         // make sure that make sure that all numbers are different from each other!
         if (_numOne == _numTwo || _numOne == _numThree || _numOne == _numFour ||
             _numTwo == _numThree || _numTwo == _numFour ||
-            _numThree == _numFour) return;
+            _numThree == _numFour) return false;
 
         ERC20 token = ERC20(tokenAddress);
         // transfer the required tokens to this contract
-        if (!token.transferFrom(msg.sender, this, _value)) return;
+        var success = token.transferFrom(msg.sender, address(this), _value);
+        if (!success) return false;
 
         // tokens transfered so can now create a new bet
         bet memory newBet;
@@ -219,12 +218,37 @@ contract HMLottery is Ownable, SafeMath, Killable {
         bets.push(newBet);
 
         BetPlaced(msg.sender, _numOne, _numTwo, _numThree, _numFour, _value);
+        return true;
     }
 
+    // test functions, there are used for the unit testing and are not meant for production
+    function testBetsLength() constant returns (uint) {
+        return bets.length;
+    }
+
+    function testReturnBet(uint index) constant returns (address player, 
+                                                     uint tokensPlaced, 
+                                                     uint8 number1,
+                                                     uint8 number2,
+                                                     uint8 number3,
+                                                     uint8 number4,
+                                                     uint ratioIndex,
+                                                     uint timestamp,
+                                                     uint rollIndex,
+                                                     uint winAmount) {
+        bet outBet = bets[index];
+        return (outBet.player, outBet.tokensPlaced, outBet.numbers[0], outBet.numbers[1], outBet.numbers[2], outBet.numbers[3], outBet.ratioIndex, outBet.timestamp, outBet.rollIndex, outBet.winAmount);
+    }
+
+    /////////////////
 
     event BetPlaced(address player, uint8 _numOne, uint8 _numTwo, uint8 _numThree, uint8 _numFour, uint _value);
     
     event PlayerWon(address player, uint _value);
 
-    event RollCompleted(uint8 _numOne, uint8 _numTwo, uint8 _numThree, uint8 _numFour);
+    event RollCompleted(uint8 _numOne,
+                        uint8 _numTwo, 
+                        uint8 _numThree, 
+                        uint8 _numFour, 
+                        uint _totalWinnings);
 }
