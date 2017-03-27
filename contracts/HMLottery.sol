@@ -100,41 +100,21 @@ contract HMLottery is Ownable, SafeMath, Killable {
     }
 
     /// @notice sets the minimum bet allowed
+    /// @param _minimumBet minimum bet allowed
     function setMinimumBet(uint _minimumBet) external onlyOwner {
         minimumBet = _minimumBet;
     }
 
     /// @notice sets the maximum bet allowed
+    /// @param _maximumBet maximum bet allowed
     function setMaximumBet(uint _maximumBet) external onlyOwner {
         maximumBet = _maximumBet;
     }
 
     /// @notice sets the token that is to be used for this Lottery
     /// @param _token The address of the ERC20 token
-    /// @return whether the transfer was successful or not
     function setToken(address _token) external onlyOwner returns (bool) {     
-        if (tokenAddress != 0) {
-            // return all existing bets (because they will be in another token)
-            //ERC20 token = ERC20(tokenAddress);
-            // calculate all current bets total
-            //uint allBets = 0;
-            //for (var i = nextRollIndex; i < bets.length; i++) {
-            //    allBets += bets[i].tokensPlaced;    
-            //}
-            // check if there is enough tokens in reserve to pay these players back
-            //if (token.balanceOf(this) < allBets) return false;
-            // refund each player
-            //for (var j = nextRollIndex; j < bets.length; j++) {
-            //    token.transfer(bets[j].player, bets[j].tokensPlaced); 
-            //}
-            // remove those bets from the list
-            //bets.length = nextRollIndex;
-            return false;
-        }
-    
-        // change the token
         tokenAddress = _token;
-        return true;
     }
 
     /// @notice Starts a random number generator based on the valid seed. When calling this function the next seed's hash must also be specified. This is to ensure that seed is predetermined which means its impossible for the owner of the contract to cheat. Each existing bet is checked to see if it has won and if so how much. RollCompleted event is fired with the lucky numbers and the total winning for this roll.
@@ -261,71 +241,71 @@ contract HMLottery is Ownable, SafeMath, Killable {
         return true;
     }
 
-    /////// test functions, there are used for the unit testing and are not meant for production
-    /*
-    function testBetsLength() constant returns (uint) {
-        return bets.length;
-    }
+    // /////// test functions, there are used for the unit testing and are not meant for production
+    
+    // function testBetsLength() constant returns (uint) {
+    //     return bets.length;
+    // }
 
-    function testLastRoll() constant returns (uint8 number1,
-                                              uint8 number2,
-                                              uint8 number3,
-                                              uint8 number4,
-                                              uint totalWinnings) {
-        var lastRoll = rolls[rolls.length-1];
-        return (lastRoll.numbers[0], lastRoll.numbers[1], lastRoll.numbers[2], lastRoll.numbers[3], lastRoll.totalWinnings);
-    }
+    // function testLastRoll() constant returns (uint8 number1,
+    //                                           uint8 number2,
+    //                                           uint8 number3,
+    //                                           uint8 number4,
+    //                                           uint totalWinnings) {
+    //     var lastRoll = rolls[rolls.length-1];
+    //     return (lastRoll.numbers[0], lastRoll.numbers[1], lastRoll.numbers[2], lastRoll.numbers[3], lastRoll.totalWinnings);
+    // }
 
-    function testReturnBet(uint index) constant returns (address player, 
-                                                     uint tokensPlaced, 
-                                                     uint8 number1,
-                                                     uint8 number2,
-                                                     uint8 number3,
-                                                     uint8 number4,
-                                                     uint ratioIndex,
-                                                     uint timestamp,
-                                                     uint rollIndex,
-                                                     uint winAmount) {
-        bet outBet = bets[index];
-        return (outBet.player, outBet.tokensPlaced, outBet.numbers[0], outBet.numbers[1], outBet.numbers[2], outBet.numbers[3], outBet.ratioIndex, outBet.timestamp, outBet.rollIndex, outBet.winAmount);
-    }
+    // function testReturnBet(uint index) constant returns (address player, 
+    //                                                  uint tokensPlaced, 
+    //                                                  uint8 number1,
+    //                                                  uint8 number2,
+    //                                                  uint8 number3,
+    //                                                  uint8 number4,
+    //                                                  uint ratioIndex,
+    //                                                  uint timestamp,
+    //                                                  uint rollIndex,
+    //                                                  uint winAmount) {
+    //     bet outBet = bets[index];
+    //     return (outBet.player, outBet.tokensPlaced, outBet.numbers[0], outBet.numbers[1], outBet.numbers[2], outBet.numbers[3], outBet.ratioIndex, outBet.timestamp, outBet.rollIndex, outBet.winAmount);
+    // }
 
-    // since the real rollNumbers function uses random generation its difficult to test, this function simulates the real function with the same code but injects selected winning numbers
-    function testRollNumbers(uint8 number1, uint8 number2, uint8 number3, uint8 number4) external onlyOwner returns (bool) {
+    // // since the real rollNumbers function uses random generation its difficult to test, this function simulates the real function with the same code but injects selected winning numbers
+    // function testRollNumbers(uint8 number1, uint8 number2, uint8 number3, uint8 number4) external onlyOwner returns (bool) {
        
-        uint8[4] memory numbers = [number1, number2, number3, number4]; 
+    //     uint8[4] memory numbers = [number1, number2, number3, number4]; 
 
-        // check all bets to see who won and how much, tally up the grand total
-        uint totalWinnings = 0;
+    //     // check all bets to see who won and how much, tally up the grand total
+    //     uint totalWinnings = 0;
 
-        for (uint b = nextRollIndex; b < bets.length; b++) {
-            uint8 correctNumbers = 0;
-            for (uint8 k = 0; k < 4; k++) {
-                for (uint8 l = 0; l < 4; l++) {
-                    if (bets[b].numbers[k] == numbers[l]) correctNumbers++;
-                }
-            }
-            if (correctNumbers > 0) {
-                bets[b].winAmount = bets[b].tokensPlaced * ratios[bets[b].ratioIndex].numberRatios[correctNumbers - 1] / 100;           // very important to divide by 100 because the payout ratios have 2 decimal precision
-                PlayerWon(bets[b].player, bets[b].winAmount);
-                totalWinnings += bets[b].winAmount;
-            }
-            else bets[b].winAmount = 0;
-        }
+    //     for (uint b = nextRollIndex; b < bets.length; b++) {
+    //         uint8 correctNumbers = 0;
+    //         for (uint8 k = 0; k < 4; k++) {
+    //             for (uint8 l = 0; l < 4; l++) {
+    //                 if (bets[b].numbers[k] == numbers[l]) correctNumbers++;
+    //             }
+    //         }
+    //         if (correctNumbers > 0) {
+    //             bets[b].winAmount = bets[b].tokensPlaced * ratios[bets[b].ratioIndex].numberRatios[correctNumbers - 1] / 100;           // very important to divide by 100 because the payout ratios have 2 decimal precision
+    //             PlayerWon(bets[b].player, bets[b].winAmount);
+    //             totalWinnings += bets[b].winAmount;
+    //         }
+    //         else bets[b].winAmount = 0;
+    //     }
 
-        // add a new roll with the numbers
-        roll memory newRoll = roll(numbers, "rstrst", totalWinnings, now);
-        rolls.push(newRoll);
+    //     // add a new roll with the numbers
+    //     roll memory newRoll = roll(numbers, "rstrst", totalWinnings, now);
+    //     rolls.push(newRoll);
 
-        // move the nextRollIndex to end of the bets list
-        nextRollIndex = bets.length;
+    //     // move the nextRollIndex to end of the bets list
+    //     nextRollIndex = bets.length;
 
-        RollCompleted(numbers[0], numbers[1], numbers[2], numbers[3], totalWinnings);
+    //     RollCompleted(numbers[0], numbers[1], numbers[2], numbers[3], totalWinnings);
 
-        hashedSeeds.push(0xd126d9ba76874eeae0e9706d1303194952377059e8d72424b4da996c0d4e0c7f);  // add the next Hashed Seed for the next draw
-        payoutPending = true;
-        return true;
-    }
-    */
+    //     hashedSeeds.push(0xd126d9ba76874eeae0e9706d1303194952377059e8d72424b4da996c0d4e0c7f);  // add the next Hashed Seed for the next draw
+    //     payoutPending = true;
+    //     return true;
+    // }
+    
 
 }
