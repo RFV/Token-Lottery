@@ -234,6 +234,12 @@ contract HMLottery is Ownable, SafeMath, Killable {
         return true;
     }
 
+    /// @notice Drains the remaining tokens back to the owner of the lottery
+    /// @return whether the transfer was successful or not
+    function drain() external onlyOwner returns (bool) {
+        return token.transfer(owner, token.balanceOf(this));    
+    }
+
     //// PUBLIC interface
 
     /// @notice this is to place a new bet. Before a bet can be places the user must ensure that they have called the approve function on the token. This will enable this lottery contract to deduct (transfer) the specified tokens for the next bet.
