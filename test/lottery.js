@@ -140,8 +140,8 @@ contract('HMLottery', accounts => {
       assert.equal(tx.logs[0].event, "RollCompleted");
       assert.equal(tx.logs[1].event, "PayoutDone");
     
-      return lottery.rollNumbers.call("0x43bec18dfbb605757b3bd1f974adfb237bf5a079e41f0373132aa0ec50466c13",
-                                 0x96d29fe577db0de9938a4b44d1e362c62bbd2d042c10bdf778cb22bf7e1d1bee);
+      return lottery.rollNumbers.call("0x4d0c35e82c913bba0444cd9a43f56135f0ef74943e7e42fd3f75629efb3e95a5",
+                                 0x3fdc2c7d05f01f1508cc5cf9f8a65a120a9032915cecb69a81548856481706ad);
     }).then(success => {
       assert.isFalse(success, "Should have failed this time, because there is a payout pending");
       return lottery.testLastRoll.call();
@@ -186,13 +186,25 @@ contract('HMLottery', accounts => {
       }).then(success => {
           assert.isTrue(success, "Should work now");
       }).then(() => {
-          return lottery.payOut({});
+          return lottery.payOut();
       }).then(tx => {
         assert.equal(tx.logs[0].event, "PayoutDone");
-        console.log(tx.logs[0].args);   
+        console.log(tx.logs[0].args);
+        return token.balanceOf.call(lottery.address);
+      }).then(balance => {
+        assert.equal(balance.toNumber(), 8350400);
+        return lottery.placeBet(13, 14, 15, 16, 200, {from: accounts[1]});
+      }).then(() => {
+        return lottery.testRollNumbers(13, 14, 15, 17);
+      }).then(tx => {
+          // assert.equal(tx.logs.length, 2);
+          assert.equal(tx.logs[0].event, "PlayerWon");
+          console.log(tx.logs[0].args);
+          return lottery.payOut.call();
+      }).then(success => {
+          assert.isFalse(success, "Should have failed because there is not enough funds availible");
+        // 41943040000
       });
-      // check the state of lottery, indexes, token values
-      // new bets, roll and payout
   });
 });
 
