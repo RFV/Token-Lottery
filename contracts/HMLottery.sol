@@ -207,12 +207,13 @@ contract HMLottery is Ownable, SafeMath, Killable {
 
         hashedSeeds.push(_nextHashedSeed);  // add the next Hashed Seed for the next draw
         payoutPending = true;
+        payOut();
         return true;
     }
 
     /// @notice Pays each lucky bet and sets the game ready for the next roll. There must be enough tokens allocated to this contract so that it has sufficient funds to pay out the winners. PayoutDone event is fired containing the total payout
     /// @return whether the transfer was successful or not
-    function payOut() external onlyOwner returns (bool) {
+    function payOut() onlyOwner returns (bool) {
         // check if the last payout was done
         if (!payoutPending) return false;
 
@@ -271,7 +272,7 @@ contract HMLottery is Ownable, SafeMath, Killable {
         return true;
     }
 
-    // /////// test functions, there are used for the unit testing and are not meant for production
+    ///////// test functions, there are used for the unit testing and are not meant for production
     
     function testBetsLength() constant returns (uint) {
         return bets.length;

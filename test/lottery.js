@@ -136,8 +136,9 @@ contract('HMLottery', accounts => {
       return lottery.rollNumbers("0xadb8780a5b2e5c04935b7e63fd6946432ea59fdc5fe79e52755c0a728f99b16b",
                                  0x5181c08ca7caf86f6c2fba1ce9819db67a0f6697196fe6f17a5a22bd7631a4d8);
     }).then(tx => {
-      assert.equal(tx.logs.length, 1);
+      assert.equal(tx.logs.length, 2);
       assert.equal(tx.logs[0].event, "RollCompleted");
+      assert.equal(tx.logs[1].event, "PayoutDone");
     
       return lottery.rollNumbers.call("0x43bec18dfbb605757b3bd1f974adfb237bf5a079e41f0373132aa0ec50466c13",
                                  0x96d29fe577db0de9938a4b44d1e362c62bbd2d042c10bdf778cb22bf7e1d1bee);
@@ -190,6 +191,8 @@ contract('HMLottery', accounts => {
         assert.equal(tx.logs[0].event, "PayoutDone");
         console.log(tx.logs[0].args);   
       });
+      // check the state of lottery, indexes, token values
+      // new bets, roll and payout
   });
 });
 
