@@ -11,11 +11,11 @@ import './ExampleToken.sol';
 /// @author Riaan F Venter~ RFVenter~ <msg@rfv.io>
 contract HMLottery is Ownable, SafeMath, Killable {
 
-    event BetPlaced(address _player, uint8 _numOne, uint8 _numTwo, uint8 _numThree, uint8 _numFour, uint _value);
-    event RollCompleted(uint8 _numOne,
-                        uint8 _numTwo, 
-                        uint8 _numThree, 
-                        uint8 _numFour, 
+    event BetPlaced(address _player, uint8 _number1, uint8 _number2, uint8 _number3, uint8 _number4, uint _value);
+    event RollCompleted(uint8 _number1,
+                        uint8 _number2, 
+                        uint8 _number3, 
+                        uint8 _number4, 
                         uint _totalWinnings);
     event PlayerWon(address _player, uint _value);
     event PayoutDone(uint _totalWinnings);
@@ -33,13 +33,19 @@ contract HMLottery is Ownable, SafeMath, Killable {
 
     // the set ratios in case of winning 1, 2, 3 or 4 correct numbers
     struct ratio {
-        uint[4] numberRatios;       // multiples of payouts (based on 2 decimals)
+        uint number1;               // multiples of payouts (based on 2 decimals)
+        uint number2;               // multiples of payouts (based on 2 decimals)
+        uint number3;               // multiples of payouts (based on 2 decimals)
+        uint number4;               // multiples of payouts (based on 2 decimals)
         uint timestamp;             // timestamp that these payout ratios where set
     }
 
     // represents a roll
     struct roll {
-        uint8[4] numbers;           // the winning numbers generated based on the random seed
+        uint8 number1;              // the winning numbers generated based on the random seed
+        uint8 number2;              // the winning numbers generated based on the random seed
+        uint8 number3;              // the winning numbers generated based on the random seed
+        uint8 number4;              // the winning numbers generated based on the random seed
         string seed;                // the seed that was used
         uint totalWinnings;         // the grand total of all winners for this roll
         uint timestamp;             // timestamp that this roll was generated
@@ -51,6 +57,7 @@ contract HMLottery is Ownable, SafeMath, Killable {
     bytes32[] public hashedSeeds;   // list of hashes to prove that the seeds are pre-generated
 
     roll[] public rolls;            // history of all rolls
+    roll public lastRoll;
     uint public nextRollIndex;      // the index for the first bet for the next roll
     uint public nextPayoutIndex;    // index of the next payout (for winners)
     bool public payoutPending;
@@ -60,7 +67,7 @@ contract HMLottery is Ownable, SafeMath, Killable {
     address public tokenAddress;    // address of the token being used for this lottery
     ERC20 private token;
 
-    string public codeAuthor = "Riaan Francois Venter <msg@rfv.io>"; // me
+    string public codeAuthor = "Riaan Francois Venter <msg@rfv.io>"; 
 
     /// @notice the init function that is run automatically when contract is created
     function HMLottery() {
@@ -70,10 +77,10 @@ contract HMLottery is Ownable, SafeMath, Killable {
         ratio memory nextRatio;     // create ratios for specific payouts based on how many balls won
 
         // at these payout ratios the game pays out 50% tokens taken in (based on probability)
-        nextRatio.numberRatios[0] = 3200;
-        nextRatio.numberRatios[1] = 819200;
-        nextRatio.numberRatios[2] = 209715200;
-        nextRatio.numberRatios[3] = 53687091200;  
+        nextRatio.number1 = 3200;
+        nextRatio.number2 = 819200;
+        nextRatio.number3 = 209715200;
+        nextRatio.number4 = 53687091200;  
         nextRatio.timestamp = now;  // timestamp
         ratios.push(nextRatio);     // set the payout ratio
 
@@ -88,14 +95,17 @@ contract HMLottery is Ownable, SafeMath, Killable {
 
     /// @notice sets the ratios that will be used to multiply winnings based on correct numbers
     /// @notice !!!(based on 2 decimal precision [to select a multiple of 23.5 specify 2350])
-    /// @param _oneNum The number to multiply with in case the player has one lucky number (div 100)
-    /// @param _twoNums The number to multiply with in case the player has two lucky numbers (div 100)
-    /// @param _threeNums The number to multiply with in case the player has three lucky numbers (div 100)
-    /// @param _fourNums The number to multiply with in case the player has four lucky numbers (div 100)
-    function setPayoutRatios(uint _oneNum, uint _twoNums, uint _threeNums, uint _fourNums) external onlyOwner {
+    /// @param _number1 The number to multiply with in case the player has one lucky number (div 100)
+    /// @param _number2 The number to multiply with in case the player has two lucky numbers (div 100)
+    /// @param _number3 The number to multiply with in case the player has three lucky numbers (div 100)
+    /// @param _number4 The number to multiply with in case the player has four lucky numbers (div 100)
+    function setPayoutRatios(uint _number1, uint _number2, uint _number3, uint _number4) external onlyOwner {
         ratio memory nextRatio;
 
-        nextRatio.numberRatios = [_oneNum, _twoNums, _threeNums, _fourNums];
+        nextRatio.number1 = _number1;
+        nextRatio.number2 = _number2;
+        nextRatio.number3 = _number3;
+        nextRatio.number4 = _number4;
         nextRatio.timestamp = now;
         ratios.push(nextRatio);
     }
@@ -156,8 +166,22 @@ contract HMLottery is Ownable, SafeMath, Killable {
                     if (bets[b].numbers[k] == numbers[l]) correctNumbers++;
                 }
             }
+            // very important to divide by 100 because the payout ratios have 2 decimal precision
+            uint multiple;
             if (correctNumbers > 0) {
-                bets[b].winAmount = bets[b].tokensPlaced * ratios[bets[b].ratioIndex].numberRatios[correctNumbers - 1] / 100;           // very important to divide by 100 because the payout ratios have 2 decimal precision
+                if (correctNumbers == 1) {
+                    multiple = ratios[bets[b].ratioIndex].number1 / 100;
+                }
+                else if (correctNumbers == 2) {
+                    multiple = ratios[bets[b].ratioIndex].number2 / 100;
+                }
+                else if (correctNumbers == 3) {
+                    multiple = ratios[bets[b].ratioIndex].number3 / 100;
+                }
+                else if (correctNumbers == 4) {
+                    multiple = ratios[bets[b].ratioIndex].number4 / 100;
+                }
+                bets[b].winAmount = bets[b].tokensPlaced * multiple;          
                 PlayerWon(bets[b].player, bets[b].winAmount);
                 totalWinnings += bets[b].winAmount;
             }
@@ -165,8 +189,16 @@ contract HMLottery is Ownable, SafeMath, Killable {
         }
 
         // add a new roll with the numbers
-        roll memory newRoll = roll(numbers, _seed, totalWinnings, now);
+        roll memory newRoll;
+        newRoll.number1 = numbers[0];
+        newRoll.number2 = numbers[1];
+        newRoll.number3 = numbers[2];
+        newRoll.number4 = numbers[3];
+        newRoll.seed = _seed;
+        newRoll.totalWinnings = totalWinnings;
+        newRoll.timestamp = now;
         rolls.push(newRoll);
+        lastRoll = newRoll;
 
         // move the nextRollIndex to end of the bets list
         nextRollIndex = bets.length;
@@ -185,7 +217,7 @@ contract HMLottery is Ownable, SafeMath, Killable {
         if (!payoutPending) return false;
 
         // check if there is enough tokens in reserve to pay these players back
-        if (token.balanceOf(this) < rolls[rolls.length-1].totalWinnings) return false;
+        if (token.balanceOf(this) < lastRoll.totalWinnings) return false;
    
         uint totalPayout;
 
@@ -205,21 +237,21 @@ contract HMLottery is Ownable, SafeMath, Killable {
     //// PUBLIC interface
 
     /// @notice this is to place a new bet. Before a bet can be places the user must ensure that they have called the approve function on the token. This will enable this lottery contract to deduct (transfer) the specified tokens for the next bet.
-    /// @param _numOne 1st number for the bet
-    /// @param _numTwo 2nd number for the bet
-    /// @param _numThree 3rd number for the bet
-    /// @param _numFour 4th number for the bet
+    /// @param _number1 1st number for the bet
+    /// @param _number2 2nd number for the bet
+    /// @param _number3 3rd number for the bet
+    /// @param _number4 4th number for the bet
     /// @param _value the number of tokens to place for this bet
     /// @return whether the transfer was successful or not
-    function placeBet(uint8 _numOne, uint8 _numTwo, uint8 _numThree, uint8 _numFour, uint _value) external returns (bool) {
+    function placeBet(uint8 _number1, uint8 _number2, uint8 _number3, uint8 _number4, uint _value) external returns (bool) {
 
         // check that the bet is within the min and max bet limits
         if ((_value < minimumBet) || (_value > maximumBet)) return false;
 
         // make sure that make sure that all numbers are different from each other!
-        if (_numOne == _numTwo || _numOne == _numThree || _numOne == _numFour ||
-            _numTwo == _numThree || _numTwo == _numFour ||
-            _numThree == _numFour) return false;
+        if (_number1 == _number2 || _number1 == _number3 || _number1 == _number4 ||
+            _number2 == _number3 || _number2 == _number4 ||
+            _number3 == _number4) return false;
 
         // transfer the required tokens to this contract
         if (!token.transferFrom(msg.sender, this, _value)) return false;
@@ -228,14 +260,14 @@ contract HMLottery is Ownable, SafeMath, Killable {
         bet memory newBet;
         newBet.player = msg.sender;
         newBet.tokensPlaced = _value;
-        newBet.numbers = [_numOne, _numTwo, _numThree, _numFour];
+        newBet.numbers = [_number1, _number2, _number3, _number4];
         newBet.ratioIndex = ratios.length - 1;
         newBet.timestamp = now;
 
         // place it into the bets list
         bets.push(newBet);
 
-        BetPlaced(msg.sender, _numOne, _numTwo, _numThree, _numFour, _value);
+        BetPlaced(msg.sender, _number1, _number2, _number3, _number4, _value);
         return true;
     }
 
@@ -250,8 +282,7 @@ contract HMLottery is Ownable, SafeMath, Killable {
                                               uint8 number3,
                                               uint8 number4,
                                               uint totalWinnings) {
-        var lastRoll = rolls[rolls.length-1];
-        return (lastRoll.numbers[0], lastRoll.numbers[1], lastRoll.numbers[2], lastRoll.numbers[3], lastRoll.totalWinnings);
+        return (lastRoll.number1, lastRoll.number2, lastRoll.number3, lastRoll.number4, lastRoll.totalWinnings);
     }
 
     function testReturnBet(uint index) constant returns (address player, 
@@ -283,17 +314,33 @@ contract HMLottery is Ownable, SafeMath, Killable {
                     if (bets[b].numbers[k] == numbers[l]) correctNumbers++;
                 }
             }
+            uint multiple;
             if (correctNumbers > 0) {
-                bets[b].winAmount = bets[b].tokensPlaced * ratios[bets[b].ratioIndex].numberRatios[correctNumbers - 1] / 100;           // very important to divide by 100 because the payout ratios have 2 decimal precision
+                if (correctNumbers == 1) {
+                    multiple = ratios[bets[b].ratioIndex].number1 / 100;
+                }
+                else if (correctNumbers == 2) {
+                    multiple = ratios[bets[b].ratioIndex].number2 / 100;
+                }
+                else if (correctNumbers == 3) {
+                    multiple = ratios[bets[b].ratioIndex].number3 / 100;
+                }
+                else if (correctNumbers == 4) {
+                    multiple = ratios[bets[b].ratioIndex].number4 / 100;
+                }
+                bets[b].winAmount = bets[b].tokensPlaced * multiple;          
                 PlayerWon(bets[b].player, bets[b].winAmount);
                 totalWinnings += bets[b].winAmount;
             }
             else bets[b].winAmount = 0;
         }
 
+
+
         // add a new roll with the numbers
-        roll memory newRoll = roll(numbers, "rstrst", totalWinnings, now);
+        roll memory newRoll = roll(numbers[0], numbers[1], numbers[2], numbers[3], "rstrst", totalWinnings, now);
         rolls.push(newRoll);
+        lastRoll = newRoll;
 
         // move the nextRollIndex to end of the bets list
         nextRollIndex = bets.length;
