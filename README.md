@@ -17,7 +17,7 @@ Players may see the last roll results, which includes the seed that was used ins
 
 The smart contract makes use of the following libraries: Safemath, Ownable, Contactable, Killable and ERC20 (for token protocols).
 
-##Owner Only Functions
+## Owner Only Functions
 
     setPayoutRatios(uint _number1, uint _number2, uint _number3, uint _number4)
     
@@ -40,7 +40,7 @@ The smart contract makes use of the following libraries: Safemath, Ownable, Cont
     kill()
     
 
-##Public Functions
+## Public Functions
 
     placeBet(uint8 _number1, uint8 _number2, uint8 _number3, uint8 _number4, uint _value) external returns (bool)
 
