@@ -1,13 +1,106 @@
 pragma solidity ^0.4.8;
 
-import 'zeppelin/ownership/Ownable.sol';        // set specific function for owner only
-import 'zeppelin/ownership/Contactable.sol';    // contract has contact info
-import 'zeppelin/lifecycle/Killable.sol';       // contract may be killed
-import 'zeppelin/SafeMath.sol';                 // safe mathematics functions
-import 'zeppelin/token/ERC20.sol';              // ERC20 interface
-
 /// @title Hadi Morrow's Lottery
 /// @author Riaan F Venter~ RFVenter~ <msg@rfv.io>
+
+contract Ownable {
+  address public owner;
+
+  function Ownable() {
+    owner = msg.sender;
+  }
+
+  modifier onlyOwner() {
+    if (msg.sender != owner) {
+      throw;
+    }
+    _;
+  }
+
+  function transferOwnership(address newOwner) onlyOwner {
+    if (newOwner != address(0)) {
+      owner = newOwner;
+    }
+  }
+
+}
+
+contract Contactable is Ownable{
+
+     string public contactInformation;
+
+     function setContactInformation(string info) onlyOwner{
+         contactInformation = info;
+     }
+
+}
+
+contract Killable is Ownable {
+  function kill() onlyOwner {
+    selfdestruct(owner);
+  }
+}
+
+contract SafeMath {
+  function safeMul(uint a, uint b) internal returns (uint) {
+    uint c = a * b;
+    assert(a == 0 || c / a == b);
+    return c;
+  }
+
+  function safeDiv(uint a, uint b) internal returns (uint) {
+    assert(b > 0);
+    uint c = a / b;
+    assert(a == b * c + a % b);
+    return c;
+  }
+
+  function safeSub(uint a, uint b) internal returns (uint) {
+    assert(b <= a);
+    return a - b;
+  }
+
+  function safeAdd(uint a, uint b) internal returns (uint) {
+    uint c = a + b;
+    assert(c>=a && c>=b);
+    return c;
+  }
+
+  function max64(uint64 a, uint64 b) internal constant returns (uint64) {
+    return a >= b ? a : b;
+  }
+
+  function min64(uint64 a, uint64 b) internal constant returns (uint64) {
+    return a < b ? a : b;
+  }
+
+  function max256(uint256 a, uint256 b) internal constant returns (uint256) {
+    return a >= b ? a : b;
+  }
+
+  function min256(uint256 a, uint256 b) internal constant returns (uint256) {
+    return a < b ? a : b;
+  }
+
+  function assert(bool assertion) internal {
+    if (!assertion) {
+      throw;
+    }
+  }
+}
+
+contract ERC20 {
+  uint public totalSupply;
+  function balanceOf(address who) constant returns (uint);
+  function allowance(address owner, address spender) constant returns (uint);
+
+  function transfer(address to, uint value) returns (bool ok);
+  function transferFrom(address from, address to, uint value) returns (bool ok);
+  function approve(address spender, uint value) returns (bool ok);
+  event Transfer(address indexed from, address indexed to, uint value);
+  event Approval(address indexed owner, address indexed spender, uint value);
+}
+
 contract HMLottery is Ownable, SafeMath, Killable {
 
     event BetPlaced(address _player, uint8 _number1, uint8 _number2, uint8 _number3, uint8 _number4, uint _value);
@@ -270,87 +363,4 @@ contract HMLottery is Ownable, SafeMath, Killable {
         BetPlaced(msg.sender, _number1, _number2, _number3, _number4, _value);
         return true;
     }
-
-    ///////// test functions, there are used for the unit testing and are not meant for production
-    
-    // function testBetsLength() constant returns (uint) {
-    //     return bets.length;
-    // }
-
-    // function testLastRoll() constant returns (uint8 number1,
-    //                                           uint8 number2,
-    //                                           uint8 number3,
-    //                                           uint8 number4,
-    //                                           uint totalWinnings) {
-    //     return (lastRoll.number1, lastRoll.number2, lastRoll.number3, lastRoll.number4, lastRoll.totalWinnings);
-    // }
-
-    // function testReturnBet(uint index) constant returns (address player, 
-    //                                                  uint tokensPlaced, 
-    //                                                  uint8 number1,
-    //                                                  uint8 number2,
-    //                                                  uint8 number3,
-    //                                                  uint8 number4,
-    //                                                  uint ratioIndex,
-    //                                                  uint timestamp,
-    //                                                  uint rollIndex,
-    //                                                  uint winAmount) {
-    //     bet outBet = bets[index];
-    //     return (outBet.player, outBet.tokensPlaced, outBet.numbers[0], outBet.numbers[1], outBet.numbers[2], outBet.numbers[3], outBet.ratioIndex, outBet.timestamp, outBet.rollIndex, outBet.winAmount);
-    // }
-
-    // // since the real rollNumbers function uses random generation its difficult to test, this function simulates the real function with the same code but injects selected winning numbers
-    // function testRollNumbers(uint8 number1, uint8 number2, uint8 number3, uint8 number4) external onlyOwner returns (bool) {
-       
-    //     uint8[4] memory numbers = [number1, number2, number3, number4]; 
-
-    //     // check all bets to see who won and how much, tally up the grand total
-    //     uint totalWinnings = 0;
-
-    //     for (uint b = nextRollIndex; b < bets.length; b++) {
-    //         uint8 correctNumbers = 0;
-    //         for (uint8 k = 0; k < 4; k++) {
-    //             for (uint8 l = 0; l < 4; l++) {
-    //                 if (bets[b].numbers[k] == numbers[l]) correctNumbers++;
-    //             }
-    //         }
-    //         uint multiple;
-    //         if (correctNumbers > 0) {
-    //             if (correctNumbers == 1) {
-    //                 multiple = ratios[bets[b].ratioIndex].number1 / 100;
-    //             }
-    //             else if (correctNumbers == 2) {
-    //                 multiple = ratios[bets[b].ratioIndex].number2 / 100;
-    //             }
-    //             else if (correctNumbers == 3) {
-    //                 multiple = ratios[bets[b].ratioIndex].number3 / 100;
-    //             }
-    //             else if (correctNumbers == 4) {
-    //                 multiple = ratios[bets[b].ratioIndex].number4 / 100;
-    //             }
-    //             bets[b].winAmount = bets[b].tokensPlaced * multiple;          
-    //             PlayerWon(bets[b].player, bets[b].winAmount);
-    //             totalWinnings += bets[b].winAmount;
-    //         }
-    //         else bets[b].winAmount = 0;
-    //     }
-
-
-
-    //     // add a new roll with the numbers
-    //     roll memory newRoll = roll(numbers[0], numbers[1], numbers[2], numbers[3], "rstrst", totalWinnings, now);
-    //     rolls.push(newRoll);
-    //     lastRoll = newRoll;
-
-    //     // move the nextRollIndex to end of the bets list
-    //     nextRollIndex = bets.length;
-
-    //     RollCompleted(numbers[0], numbers[1], numbers[2], numbers[3], totalWinnings);
-
-    //     hashedSeeds.push(0xd126d9ba76874eeae0e9706d1303194952377059e8d72424b4da996c0d4e0c7f);  // add the next Hashed Seed for the next draw
-    //     payoutPending = true;
-    //     return true;
-    // }
-    
-
 }
