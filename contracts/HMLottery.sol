@@ -6,7 +6,7 @@ import 'zeppelin/lifecycle/Killable.sol';       // contract may be killed
 import 'zeppelin/SafeMath.sol';                 // safe mathematics functions
 import 'zeppelin/token/ERC20.sol';              // ERC20 interface
 
-/// @title Hadi Morrow's Lottery
+/// @title General Token Lottery
 /// @author Riaan F Venter~ RFVenter~ <msg@rfv.io>
 contract HMLottery is Ownable, SafeMath, Killable {
 
