@@ -1,4 +1,4 @@
-# HMLottery
+# Token Lottery
 An Ethereum 4 Ball Lottery Smart Contract, written with Truffle, and that works with any ERC20 token.
 
 This is a lottery smart contract that allows player to make a bet with a predetermined token, and player selects a set of 4 numbers (0-255). The draw will automatically detect all winners and if there are enough funds in the lottery contract it will pay out automatically. If not, the owner of the lottery must add more tokens and then run the `payOut` function.
