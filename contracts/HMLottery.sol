@@ -279,84 +279,84 @@ contract HMLottery is Ownable, SafeMath, Killable {
 
     ///////// test functions, there are used for the unit testing and are not meant for production
     
-    // function testBetsLength() constant returns (uint) {
-    //     return bets.length;
-    // }
+//     function testBetsLength() constant returns (uint) {
+//         return bets.length;
+//     }
 
-    // function testLastRoll() constant returns (uint8 number1,
-    //                                           uint8 number2,
-    //                                           uint8 number3,
-    //                                           uint8 number4,
-    //                                           uint totalWinnings) {
-    //     return (lastRoll.number1, lastRoll.number2, lastRoll.number3, lastRoll.number4, lastRoll.totalWinnings);
-    // }
+//     function testLastRoll() constant returns (uint8 number1,
+//                                               uint8 number2,
+//                                               uint8 number3,
+//                                               uint8 number4,
+//                                               uint totalWinnings) {
+//         return (lastRoll.number1, lastRoll.number2, lastRoll.number3, lastRoll.number4, lastRoll.totalWinnings);
+//     }
 
-    // function testReturnBet(uint index) constant returns (address player, 
-    //                                                  uint tokensPlaced, 
-    //                                                  uint8 number1,
-    //                                                  uint8 number2,
-    //                                                  uint8 number3,
-    //                                                  uint8 number4,
-    //                                                  uint ratioIndex,
-    //                                                  uint timestamp,
-    //                                                  uint rollIndex,
-    //                                                  uint winAmount) {
-    //     bet outBet = bets[index];
-    //     return (outBet.player, outBet.tokensPlaced, outBet.numbers[0], outBet.numbers[1], outBet.numbers[2], outBet.numbers[3], outBet.ratioIndex, outBet.timestamp, outBet.rollIndex, outBet.winAmount);
-    // }
-
-    // // since the real rollNumbers function uses random generation its difficult to test, this function simulates the real function with the same code but injects selected winning numbers
-    // function testRollNumbers(uint8 number1, uint8 number2, uint8 number3, uint8 number4) external onlyOwner returns (bool) {
+//     function testReturnBet(uint index) constant returns (address player, 
+//                                                      uint tokensPlaced, 
+//                                                      uint8 number1,
+//                                                      uint8 number2,
+//                                                      uint8 number3,
+//                                                      uint8 number4,
+//                                                      uint ratioIndex,
+//                                                      uint timestamp,
+//                                                      uint rollIndex,
+//                                                      uint winAmount) {
+//         bet outBet = bets[index];
+//         return (outBet.player, outBet.tokensPlaced, outBet.numbers[0], outBet.numbers[1], outBet.numbers[2], outBet.numbers[3], outBet.ratioIndex, outBet.timestamp, outBet.rollIndex, outBet.winAmount);
+//     }
+// // 
+//     // since the real rollNumbers function uses random generation its difficult to test, this function simulates the real function with the same code but injects selected winning numbers
+//     function testRollNumbers(uint8 number1, uint8 number2, uint8 number3, uint8 number4) external onlyOwner returns (bool) {
        
-    //     uint8[4] memory numbers = [number1, number2, number3, number4]; 
+//         uint8[4] memory numbers = [number1, number2, number3, number4]; 
 
-    //     // check all bets to see who won and how much, tally up the grand total
-    //     uint totalWinnings = 0;
+//         // check all bets to see who won and how much, tally up the grand total
+//         uint totalWinnings = 0;
 
-    //     for (uint b = nextRollIndex; b < bets.length; b++) {
-    //         uint8 correctNumbers = 0;
-    //         for (uint8 k = 0; k < 4; k++) {
-    //             for (uint8 l = 0; l < 4; l++) {
-    //                 if (bets[b].numbers[k] == numbers[l]) correctNumbers++;
-    //             }
-    //         }
-    //         uint multiple;
-    //         if (correctNumbers > 0) {
-    //             if (correctNumbers == 1) {
-    //                 multiple = ratios[bets[b].ratioIndex].number1 / 100;
-    //             }
-    //             else if (correctNumbers == 2) {
-    //                 multiple = ratios[bets[b].ratioIndex].number2 / 100;
-    //             }
-    //             else if (correctNumbers == 3) {
-    //                 multiple = ratios[bets[b].ratioIndex].number3 / 100;
-    //             }
-    //             else if (correctNumbers == 4) {
-    //                 multiple = ratios[bets[b].ratioIndex].number4 / 100;
-    //             }
-    //             bets[b].winAmount = bets[b].tokensPlaced * multiple;          
-    //             PlayerWon(bets[b].player, bets[b].winAmount);
-    //             totalWinnings += bets[b].winAmount;
-    //         }
-    //         else bets[b].winAmount = 0;
-    //     }
+//         for (uint b = nextRollIndex; b < bets.length; b++) {
+//             uint8 correctNumbers = 0;
+//             for (uint8 k = 0; k < 4; k++) {
+//                 for (uint8 l = 0; l < 4; l++) {
+//                     if (bets[b].numbers[k] == numbers[l]) correctNumbers++;
+//                 }
+//             }
+//             uint multiple;
+//             if (correctNumbers > 0) {
+//                 if (correctNumbers == 1) {
+//                     multiple = ratios[bets[b].ratioIndex].number1 / 100;
+//                 }
+//                 else if (correctNumbers == 2) {
+//                     multiple = ratios[bets[b].ratioIndex].number2 / 100;
+//                 }
+//                 else if (correctNumbers == 3) {
+//                     multiple = ratios[bets[b].ratioIndex].number3 / 100;
+//                 }
+//                 else if (correctNumbers == 4) {
+//                     multiple = ratios[bets[b].ratioIndex].number4 / 100;
+//                 }
+//                 bets[b].winAmount = bets[b].tokensPlaced * multiple;          
+//                 PlayerWon(bets[b].player, bets[b].winAmount);
+//                 totalWinnings += bets[b].winAmount;
+//             }
+//             else bets[b].winAmount = 0;
+//         }
 
 
 
-    //     // add a new roll with the numbers
-    //     roll memory newRoll = roll(numbers[0], numbers[1], numbers[2], numbers[3], "rstrst", totalWinnings, now);
-    //     rolls.push(newRoll);
-    //     lastRoll = newRoll;
+//         // add a new roll with the numbers
+//         roll memory newRoll = roll(numbers[0], numbers[1], numbers[2], numbers[3], "rstrst", totalWinnings, now);
+//         rolls.push(newRoll);
+//         lastRoll = newRoll;
 
-    //     // move the nextRollIndex to end of the bets list
-    //     nextRollIndex = bets.length;
+//         // move the nextRollIndex to end of the bets list
+//         nextRollIndex = bets.length;
 
-    //     RollCompleted(numbers[0], numbers[1], numbers[2], numbers[3], totalWinnings);
+//         RollCompleted(numbers[0], numbers[1], numbers[2], numbers[3], totalWinnings);
 
-    //     hashedSeeds.push(0xd126d9ba76874eeae0e9706d1303194952377059e8d72424b4da996c0d4e0c7f);  // add the next Hashed Seed for the next draw
-    //     payoutPending = true;
-    //     return true;
-    // }
+//         hashedSeeds.push(0xd126d9ba76874eeae0e9706d1303194952377059e8d72424b4da996c0d4e0c7f);  // add the next Hashed Seed for the next draw
+//         payoutPending = true;
+//         return true;
+//     }
     
 
 }
